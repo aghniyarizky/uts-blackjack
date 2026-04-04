@@ -48,13 +48,21 @@ void clearScreen() {
 }
 
 /*
- * waitEnter()
+ * waitEnter() - DIPERBAIKI
  * Fungsi untuk menunggu user menekan ENTER satu kali saja.
- * Sebelumnya ada masalah karena cin.get() terbaca 2 kali, 
- * sekarang menggunakan cin.ignore() yang tepat.
+ * 
+ * MASALAH SEBELUMNYA: 
+ * Setelah getIntInput() atau input lainnya, ada newline tersisa di buffer.
+ * cin.get() membaca newline tersebut langsung, tanpa menunggu user.
+ * 
+ * SOLUSI: 
+ * Gunakan cin.ignore() untuk membersihkan buffer terlebih dahulu,
+ * baru kemudian cin.get() untuk menunggu ENTER dari user.
  */
 void waitEnter() {
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    // Bersihkan buffer input dari karakter tersisa (seperti newline)
+    // cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    // Tunggu user menekan ENTER
     cin.get();
 }
 
@@ -118,7 +126,8 @@ int getIntInput() {
         printInlineError("Input tidak valid. Masukkan angka yang benar.");
         cout << "  > ";
     }
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    // Hapus newline setelah angka, tapi JANGAN di-ignore di sini
+    // Biarkan waitEnter() yang menangani
     return val;
 }
 
@@ -131,6 +140,7 @@ char getYesNoInput() {
     char c;
     while (true) {
         cin >> c;
+        // Hapus newline setelah karakter
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (c == 'y' || c == 'Y' || c == 'n' || c == 'N') return c;
         printInlineError("Input tidak valid. Masukkan 'y' atau 'n'.");
@@ -150,6 +160,7 @@ string getUsernameInput() {
     string name;
     while (true) {
         cin >> name;
+        // Hapus newline setelah username
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (name.empty()) {
             printInlineError("Username tidak boleh kosong.");
@@ -168,15 +179,9 @@ string getUsernameInput() {
 }
 
 /*
- * getPasswordInput() - DIPERBAIKI
+ * getPasswordInput()
  * Meminta input password dengan syarat minimal 8 karakter.
- * 
- * PENTING: Sebelumnya ada bug dimana input 8 karakter terhitung 7.
- * Penyebab: cin >> hanya membaca sampai spasi/enter, dan ada newline tersisa.
- * Solusi: Menggunakan getline() dan membersihkan buffer dengan benar.
- * 
- * Penjelasan: getline() membaca seluruh baris termasuk spasi,
- * sehingga password "12345678" akan terbaca sebagai 8 karakter, bukan 7.
+ * Digunakan untuk password baru saat registrasi atau ganti password.
  */
 string getPasswordInput() {
     const int MIN_PASS = 8;
@@ -184,20 +189,51 @@ string getPasswordInput() {
     while (true) {
         getline(cin, pass);
         
-        // Hapus karakter carriage return (\r) jika ada (untuk Windows)
-        if (!pass.empty() && pass.back() == '\r') pass.pop_back();
+        // Hapus carriage return (\r) jika ada (dari Windows)
+        while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
+            pass.pop_back();
+        }
         
         if (pass.empty()) {
             printInlineError("Password tidak boleh kosong.");
             cout << "  > ";
             continue;
         }
+        
         if ((int)pass.length() < MIN_PASS) {
             printInlineError("Password minimal " + to_string(MIN_PASS) + 
                            " karakter (kamu memasukkan " + to_string((int)pass.length()) + ").");
             cout << "  > ";
             continue;
         }
+        
+        break;
+    }
+    return pass;
+}
+
+/*
+ * getConfirmPasswordInput() - FUNGSI BARU
+ * Meminta input konfirmasi password TANPA validasi minimal karakter.
+ * Hanya memastikan input tidak kosong.
+ * Digunakan untuk konfirmasi password saat registrasi atau ganti password.
+ */
+string getConfirmPasswordInput() {
+    string pass;
+    while (true) {
+        getline(cin, pass);
+        
+        // Hapus carriage return (\r) jika ada (dari Windows)
+        while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
+            pass.pop_back();
+        }
+        
+        if (pass.empty()) {
+            printInlineError("Konfirmasi password tidak boleh kosong.");
+            cout << "  > ";
+            continue;
+        }
+        
         break;
     }
     return pass;
@@ -594,7 +630,7 @@ struct PlayerRegistry {
     }
 
     /*
-     * updatePlayerAccount()
+     * updatePlayerAccount() - DIPERBAIKI
      * UPDATE: Mengedit username dan password akun yang sedang login.
      * Validasi username tidak boleh sama dengan yang sudah ada.
      * Validasi password minimal 8 karakter dan konfirmasi sesuai.
@@ -643,16 +679,21 @@ struct PlayerRegistry {
             bRow("  [ 1 ]  Ganti username");
             bRow("  [ 2 ]  Ganti password");
             bRow("  [ 3 ]  Ganti username & password");
+            bRow("  [ 0 ]  Kembali");
             bBorder();
             cout << "  Pilih opsi: ";
             choice = getIntInput();
-            if (choice < 1 || choice > 3) {
+            if (choice < 0 || choice > 3) {
                 bBorder();
-                bCenter("[GAGAL] Pilihan tidak valid! Masukkan angka 1, 2, atau 3.");
+                bCenter("[GAGAL] Pilihan tidak valid! Masukkan angka 0, 1, 2, atau 3.");
                 bBorder();
                 cout << "\n";
             }
-        } while (choice < 1 || choice > 3);
+        } while (choice < 0 || choice > 3);
+
+        if (choice == 0) {
+            return;
+        }
 
         // Edit username
         if (choice == 1 || choice == 3) {
@@ -672,23 +713,31 @@ struct PlayerRegistry {
         // Edit password
         if (choice == 2 || choice == 3) {
             string newPass, confirmPass;
+
+            // biar pas input password itu gak kebaca kosong
+            if (choice == 2) {
+                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    } 
+            // Input password baru (diluar loop konfirmasi)
+            cout << "  Password baru (minimal 8 karakter): ";
+            newPass = getPasswordInput();
+            
+            // Loop konfirmasi password sampai sesuai
             while (true) {
-                cout << "  Password baru (minimal 8 karakter): ";
-                cin.ignore();
-                newPass = getPasswordInput();
                 cout << "  Konfirmasi password baru: ";
-                confirmPass = getPasswordInput();
+                confirmPass = getConfirmPasswordInput();
+                
                 if (newPass != confirmPass) {
                     printInlineError("Konfirmasi password tidak sesuai!");
                     continue;
                 }
-                break;
+                break;  // Keluar loop hanya jika password sesuai
             }
             p->password = newPass;
         }
         
         bBorder();
-        bCenter("[ OK ] Akun berhasil diperbarui.");
+        bCenter("Akun berhasil diperbarui!");
         bBorder();
         cout << "\n";
         
@@ -1029,6 +1078,7 @@ void showRules() {
     printBoxRow("  Bust / Kalah  = Taruhan hangus");
     printBorder();
     cout << "  Tekan ENTER untuk melanjutkan...";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     waitEnter();
 }
 
@@ -1076,125 +1126,176 @@ void showResult(PlayerProfile* p, int pt, int dt, bool bust,
 void playBlackjack(PlayerProfile* p) {
     Hand playerHand, dealerHand;
     int  bet = 0;
+    char playAgain = 'y';
 
-    cout << "\n";
-    printBorder();
-    printBoxCenter("PASANG TARUHAN");
-    printBorder();
-    printBoxRow("  Pemain : " + p->username);
-    printBoxRow("  Chips  : " + to_string(p->chips));
-    printBorder();
-    do {
-        cout << "  Masukkan taruhan (1-" << p->chips << ", 0 = batal): ";
-        bet = getIntInput();
-        if (bet == 0) { playerHand.clear(); dealerHand.clear(); return; }
-        if (bet < 1 || bet > p->chips)
-            cout << "  [GAGAL] Taruhan tidak valid. Coba lagi.\n";
-    } while (bet < 1 || bet > p->chips);
+    while (playAgain == 'y' || playAgain == 'Y') {  // <-- TAMBAHKAN: loop utama
+        Hand playerHand, dealerHand;
+        int  bet = 0;
 
-    p->chips -= bet;
-
-    // Pembagian kartu awal
-    playerHand.addCard(*dealCard());
-    dealerHand.addCard(*dealCard());
-    playerHand.addCard(*dealCard());
-    dealerHand.addCard(*dealCard());
-
-    bool bust            = false;
-    bool playerBlackjack = (playerHand.total() == 21 && playerHand.size == 2);
-    bool dealerBJearly   = (dealerHand.total() == 21 && dealerHand.size == 2);
-
-    showGameTable(p, playerHand, dealerHand, true, bet, "Kartu dibagikan! Giliran kamu.");
-
-    // Giliran pemain
-    if (!playerBlackjack) {
-        char ch;
+        cout << "\n";
+        printBorder();
+        printBoxCenter("PASANG TARUHAN");
+        printBorder();
+        printBoxRow("  Pemain : " + p->username);
+        printBoxRow("  Chips  : " + to_string(p->chips));
+        printBorder();
         do {
-            printBorder();
-            printBoxRow("  [H] Hit  = Minta kartu tambahan");
-            printBoxRow("  [S] Stand = Berhenti, giliran dealer");
-            printBorder();
-            cout << "  Pilihan kamu (H/S): ";
-
-            while (true) {
-                cin >> ch;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                if (ch == 'H' || ch == 'h' || ch == 'S' || ch == 's') break;
-                printInlineError("Input tidak valid. Ketik 'H' untuk Hit atau 'S' untuk Stand.");
-                cout << "  > ";
+            cout << "  Masukkan taruhan (1-" << p->chips << ", 0 = batal): ";
+            bet = getIntInput();
+            if (bet == 0) { 
+                playerHand.clear(); 
+                dealerHand.clear(); 
+                return; 
             }
+            if (bet < 1 || bet > p->chips)
+                cout << "  [GAGAL] Taruhan tidak valid. Coba lagi.\n";
+        } while (bet < 1 || bet > p->chips);
 
-            if (ch == 'H' || ch == 'h') {
-                playerHand.addCard(*dealCard());
-                if (playerHand.total() > 21) {
-                    showGameTable(p, playerHand, dealerHand, true, bet,
-                                  "BUST! Total kamu melebihi 21 -- KALAH!");
-                    bust = true;
-                    break;
+        p->chips -= bet;
+
+        // Pembagian kartu awal
+        playerHand.addCard(*dealCard());
+        dealerHand.addCard(*dealCard());
+        playerHand.addCard(*dealCard());
+        dealerHand.addCard(*dealCard());
+
+        bool bust            = false;
+        bool playerBlackjack = (playerHand.total() == 21 && playerHand.size == 2);
+        bool dealerBJearly   = (dealerHand.total() == 21 && dealerHand.size == 2);
+
+        showGameTable(p, playerHand, dealerHand, true, bet, "Kartu dibagikan! Giliran kamu.");
+
+        // Giliran pemain
+        if (!playerBlackjack) {
+            char ch;
+            do {
+                printBorder();
+                printBoxRow("  [H] Hit  = Minta kartu tambahan");
+                printBoxRow("  [S] Stand = Berhenti, giliran dealer");
+                printBorder();
+                cout << "  Pilihan kamu (H/S): ";
+
+                while (true) {
+                    cin >> ch;
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    if (ch == 'H' || ch == 'h' || ch == 'S' || ch == 's') break;
+                    printInlineError("Input tidak valid. Ketik 'H' untuk Hit atau 'S' untuk Stand.");
+                    cout << "  > ";
                 }
-                showGameTable(p, playerHand, dealerHand, true, bet,
-                              "Kartu ditambahkan. Total: " + to_string(playerHand.total()));
-            } else {
-                showGameTable(p, playerHand, dealerHand, true, bet, "Kamu STAND. Giliran dealer...");
-            }
-        } while (ch != 'S' && ch != 's' && !bust);
-    } else {
-        showGameTable(p, playerHand, dealerHand, true, bet, "BLACKJACK! Kartu sempurna!");
-    }
 
-    // Giliran dealer
-    if (!bust) {
-        showGameTable(p, playerHand, dealerHand, false, bet, "Dealer membuka kartu tersembunyi...");
-        while (dealerHand.total() < 17) {
-            dealerHand.addCard(*dealCard());
-            string st = (dealerHand.total() > 21)
-                ? "Dealer BUST! Total: " + to_string(dealerHand.total())
-                : "Dealer HIT. Total: " + to_string(dealerHand.total());
-            showGameTable(p, playerHand, dealerHand, false, bet, st);
+                if (ch == 'H' || ch == 'h') {
+                    playerHand.addCard(*dealCard());
+                    if (playerHand.total() > 21) {
+                        showGameTable(p, playerHand, dealerHand, true, bet,
+                                      "BUST! Total kamu melebihi 21 -- KALAH!");
+                        bust = true;
+                        break;
+                    }
+                    showGameTable(p, playerHand, dealerHand, true, bet,
+                                  "Kartu ditambahkan. Total: " + to_string(playerHand.total()));
+                } else {
+                    showGameTable(p, playerHand, dealerHand, true, bet, "Kamu STAND. Giliran dealer...");
+                }
+            } while (ch != 'S' && ch != 's' && !bust);
+        } else {
+            showGameTable(p, playerHand, dealerHand, true, bet, "BLACKJACK! Kartu sempurna!");
         }
-        if (dealerHand.total() <= 21)
-            showGameTable(p, playerHand, dealerHand, false, bet,
-                          "Dealer STAND. Total: " + to_string(dealerHand.total()));
-    }
 
-    // Hitung hasil
-    int  pt       = playerHand.total();
-    int  dt       = dealerHand.total();
-    bool dealerBJ = dealerBJearly;
-    bool win      = false;
-    bool push     = false;
-    int  payout   = 0;
+        // Giliran dealer
+        if (!bust) {
+            showGameTable(p, playerHand, dealerHand, false, bet, "Dealer membuka kartu tersembunyi...");
+            while (dealerHand.total() < 17) {
+                dealerHand.addCard(*dealCard());
+                string st = (dealerHand.total() > 21)
+                    ? "Dealer BUST! Total: " + to_string(dealerHand.total())
+                    : "Dealer HIT. Total: " + to_string(dealerHand.total());
+                showGameTable(p, playerHand, dealerHand, false, bet, st);
+            }
+            if (dealerHand.total() <= 21)
+                showGameTable(p, playerHand, dealerHand, false, bet,
+                              "Dealer STAND. Total: " + to_string(dealerHand.total()));
+        }
 
-    if (bust) {
-        p->losses++;
-    } else if (playerBlackjack && !dealerBJ) {
-        payout = bet + bet * 3 / 2;
-        p->chips += payout;
-        p->wins++;
-        win = true;
-    } else if (playerBlackjack && dealerBJ) {
-        p->chips += bet;
-        push = true;
-    } else if (dt > 21 || pt > dt) {
-        payout = bet * 2;
-        p->chips += payout;
-        p->wins++;
-        win = true;
-    } else if (pt == dt) {
-        p->chips += bet;
-        push = true;
-    } else {
-        p->losses++;
-    }
+        // Hitung hasil
+        int  pt       = playerHand.total();
+        int  dt       = dealerHand.total();
+        bool dealerBJ = dealerBJearly;
+        bool win      = false;
+        bool push     = false;
+        int  payout   = 0;
 
-    showResult(p, pt, dt, bust, playerBlackjack, dealerBJ, bet, payout, win, push);
+        if (bust) {
+            p->losses++;
+        } else if (playerBlackjack && !dealerBJ) {
+            payout = bet + bet * 3 / 2;
+            p->chips += payout;
+            p->wins++;
+            win = true;
+        } else if (playerBlackjack && dealerBJ) {
+            p->chips += bet;
+            push = true;
+        } else if (dt > 21 || pt > dt) {
+            payout = bet * 2;
+            p->chips += payout;
+            p->wins++;
+            win = true;
+        } else if (pt == dt) {
+            p->chips += bet;
+            push = true;
+        } else {
+            p->losses++;
+        }
 
-    playerHand.clear();
-    dealerHand.clear();
+        showResult(p, pt, dt, bust, playerBlackjack, dealerBJ, bet, payout, win, push);
 
-    if (deckIndex > DECK_SIZE * 3 / 4) {
-        shuffleDeck();
-        cout << "  [Deck diacak ulang]\n\n";
+        playerHand.clear();
+        dealerHand.clear();
+
+        if (deckIndex > DECK_SIZE * 3 / 4) {
+            shuffleDeck();
+            cout << "  [Deck diacak ulang]\n\n";
+        }
+        
+                // Tanya apakah ingin bermain lagi
+        if (p->chips > 0) {
+            cout << "\n";
+            printBorder();
+            printBoxCenter("Main lagi?");
+            printBorder();
+            printBoxRow("  Chips kamu sekarang: " + to_string(p->chips));
+            printBorder();
+            cout << "  (y/n): ";
+            playAgain = getYesNoInput();
+            
+            if (playAgain == 'y' || playAgain == 'Y') {
+                clearScreen();
+                continue;
+            }
+        } else {
+            // CHIPS HABIS - TANYA BELI CHIPS
+            cout << "\n";
+            printBorder();
+            printBoxCenter("[GAGAL] " + p->username + " tidak punya chips. apakah ingin membeli chips?");
+            printBorder();
+            cout << "  (y/n): ";
+            char buyChips = getYesNoInput();
+            
+            if (buyChips == 'y' || buyChips == 'Y') {
+                cout << "  Masukkan jumlah chips baru (1-999999): ";
+                int newChips = getChipsInput();
+                p->chips = newChips;
+                cout << "\n";
+                printBorder();
+                printBoxCenter("Berhasil membeli " + to_string(newChips) + " chips!");
+                printBorder();
+                cout << "\n  Tekan ENTER untuk melanjutkan bermain...";
+                waitEnter();
+                clearScreen();
+                continue;  // LANJUT RONDE BERIKUTNYA
+            } else {
+                playAgain = 'n';
+            }
+        }   
     }
 }
 
@@ -1266,7 +1367,7 @@ void printGameMenu(const string& username) {
 void printSuccessMsg(const string& msg) {
     cout << "\n";
     printBorder();
-    printBoxCenter("[ OK ] " + msg);
+    printBoxCenter(msg);
     printBorder();
     cout << "\n";
 }
@@ -1296,10 +1397,12 @@ void printInfoMsg(const string& msg) {
 }
 
 /*
- * addNewPlayer()
+ * addNewPlayer() - DIPERBAIKI
  * Menu untuk menambah pemain baru.
  * Validasi: username unik (case insensitive), password minimal 8 karakter,
  * konfirmasi password sesuai. Chips awal = 100.
+ * 
+ * PERBAIKAN: Membersihkan buffer dengan benar sebelum input password.
  */
 void addNewPlayer(PlayerRegistry& reg) {
     clearScreen();
@@ -1325,7 +1428,6 @@ void addNewPlayer(PlayerRegistry& reg) {
     // Input password - loop sampai valid (minimal 8 karakter)
     while (true) {
         cout << "  Password (minimal 8 karakter): ";
-        cin.ignore();
         password = getPasswordInput();
         break;  // getPasswordInput sudah memvalidasi
     }
@@ -1333,7 +1435,7 @@ void addNewPlayer(PlayerRegistry& reg) {
     // Input konfirmasi password - loop sampai sesuai dengan password
     while (true) {
         cout << "  Konfirmasi password: ";
-        confirmPass = getPasswordInput();
+        confirmPass = getConfirmPasswordInput();
         
         if (password != confirmPass) {
             printInlineError("Konfirmasi password tidak sesuai!");
@@ -1347,13 +1449,16 @@ void addNewPlayer(PlayerRegistry& reg) {
     printSuccessMsg("Pemain \"" + username + "\" berhasil ditambahkan dengan 100 chips!");
     cout << "  Tekan ENTER untuk kembali...";
     waitEnter();
+    clearScreen();
 }
 
 /*
- * loginMenu()
+ * loginMenu() - DIPERBAIKI
  * Proses login: input username dan password.
  * Username case insensitive, password case sensitive.
  * Jika salah, akan looping di dalam fungsi ini.
+ * 
+ * PERBAIKAN: Membersihkan buffer dengan benar sebelum input password.
  */
 PlayerProfile* loginMenu(PlayerRegistry& reg) {
     clearScreen();
@@ -1379,13 +1484,12 @@ PlayerProfile* loginMenu(PlayerRegistry& reg) {
     // Input password - loop sampai password benar
     while (true) {
         cout << "  Password: ";
-        cin.ignore();
-        password = getPasswordInput();
+        password = getConfirmPasswordInput();
         
         PlayerProfile* p = reg.login(username, password);
         
         if (!p) {
-            printInlineError("Password salah! Silahkan login kembali.");
+            printInlineError("Password salah!");
             continue;
         }
         
@@ -1395,7 +1499,7 @@ PlayerProfile* loginMenu(PlayerRegistry& reg) {
 }
 
 /*
- * accountManagementMenu()
+ * accountManagementMenu() - DIPERBAIKI
  * Manajemen akun untuk pemain yang sedang login.
  * Bisa edit username/password atau hapus akun.
  */
@@ -1421,48 +1525,43 @@ void accountManagementMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
         cout << "  Pilih menu: ";
         choice = getMenuInput(0, 2);
         
-        switch (choice) {
-            case 1:
-                reg.updatePlayerAccount(currentPlayer);
-                cout << "  Tekan ENTER untuk kembali...";
-                waitEnter();
-                break;
-                
-            case 2: {
-                cout << "\n";
-                printBorder();
-                printBoxCenter("KONFIRMASI HAPUS AKUN");
-                printBorder();
-                printBoxRow("  Apakah Anda yakin ingin menghapus akun \"" + currentPlayer->username + "\"?");
-                printBoxRow("  Semua data chips, statistik akan hilang PERMANEN!");
-                printBorder();
-                cout << "  (y/n): ";
-                char confirm = getYesNoInput();
-                
-                if (confirm == 'y' || confirm == 'Y') {
-                    string deletedName = currentPlayer->username;
-                    bool success = reg.deletePlayer(currentPlayer);
-                    if (success) {
-                        currentPlayer = nullptr;
-                        printSuccessMsg("Akun \"" + deletedName + "\" berhasil dihapus!");
-                        cout << "  Anda akan kembali ke menu utama...\n";
-                        cout << "  Tekan ENTER untuk melanjutkan...";
-                        waitEnter();
-                        return;
-                    } else {
-                        printErrorMsg("Gagal menghapus akun!");
-                    }
-                } else {
-                    printInfoMsg("Penghapusan akun dibatalkan.");
-                }
-                cout << "  Tekan ENTER untuk kembali...";
-                waitEnter();
-                break;
-            }
+        if (choice == 1) {
+            clearScreen();
+            reg.updatePlayerAccount(currentPlayer);
+            cout << "  Tekan ENTER untuk kembali...";
+            waitEnter();
             
-            case 0:
-                break;
+        } else if (choice == 2) {
+            clearScreen();
+            printBorder();
+            printBoxCenter("KONFIRMASI HAPUS AKUN");
+            printBorder();
+            printBoxRow("  Apakah Anda yakin ingin menghapus akun \"" + currentPlayer->username + "\"?");
+            printBorder();
+            cout << "  (y/n): ";
+            char confirm = getYesNoInput();
+            
+            if (confirm == 'y' || confirm == 'Y') {
+                string deletedName = currentPlayer->username;
+                bool success = reg.deletePlayer(currentPlayer);
+                if (success) {
+                    currentPlayer = nullptr;
+                    printSuccessMsg("Akun \"" + deletedName + "\" berhasil dihapus!");
+                    cout << "  Tekan ENTER untuk melanjutkan...";
+                    waitEnter();
+                    clearScreen();
+                    return;
+                } else {
+                    printErrorMsg("Gagal menghapus akun!");
+                }
+            } else {
+                printInfoMsg("Penghapusan akun dibatalkan.");
+            }
+            cout << "  Tekan ENTER untuk kembali...";
+            waitEnter();
         }
+        // choice == 0 -> tidak perlu ditangani, loop akan berhenti karena while (choice != 0)
+        
     } while (choice != 0);
 }
 
@@ -1483,52 +1582,52 @@ void playGameMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
         printGameMenu(currentPlayer->username);
         choice = getMenuInput(0, 4);
         
-        switch (choice) {
-            case 1:  // Mulai Bermain
-                clearScreen();
-                if (currentPlayer->chips <= 0) {
-                    printErrorMsg(currentPlayer->username + " tidak punya chips. Edit akun untuk menambah chips?");
-                    cout << "  (y/n): ";
-                    char addChips = getYesNoInput();
-                    if (addChips == 'y' || addChips == 'Y') {
-                        cout << "  Masukkan jumlah chips baru (1-999999): ";
-                        int newChips = getChipsInput();
-                        currentPlayer->chips = newChips;
-                        reg.saveToFile();
-                        printSuccessMsg("Chips " + currentPlayer->username + " sekarang: " + to_string(newChips));
-                    }
-                } else {
-                    playBlackjack(currentPlayer);
-                    reg.saveToFile();  // Simpan perubahan
+        if (choice == 1) {  // Mulai Bermain
+            clearScreen();
+            if (currentPlayer->chips <= 0) {
+                printErrorMsg(currentPlayer->username + " tidak punya chips. apakah ingin membeli chips?");
+                cout << "  (y/n): ";
+                char addChips = getYesNoInput();
+                if (addChips == 'y' || addChips == 'Y') {
+                    cout << "  Masukkan jumlah chips (1-999999): ";
+                    int newChips = getChipsInput();
+                    currentPlayer->chips = newChips;
+                    reg.saveToFile();
+                    printSuccessMsg("Chips " + currentPlayer->username + " sekarang: " + to_string(newChips));
                 }
+            } else {
+                playBlackjack(currentPlayer);
+                reg.saveToFile();  // Simpan perubahan
+            }
+            
+        } else if (choice == 2) {  // Aturan Permainan
+            showRules();
+            
+        } else if (choice == 3) {  // Manajemen Akun
+            accountManagementMenu(reg, currentPlayer);
+            
+        } else if (choice == 4) {  // Logout
+            cout << "\n";
+            printBorder();
+            printBoxCenter("KONFIRMASI LOGOUT");
+            printBorder();
+            cout << "  Apakah Anda yakin ingin logout? (y/n): ";
+            char confirm = getYesNoInput();
+            if (confirm == 'y' || confirm == 'Y') {
+                printInfoMsg("Logout berhasil! Sampai jumpa, " + currentPlayer->username + ".");
                 cout << "  Tekan ENTER untuk melanjutkan...";
                 waitEnter();
-                break;
-                
-            case 2:  // Aturan Permainan
-                showRules();
-                break;
-                
-            case 3:  // Manajemen Akun
-                accountManagementMenu(reg, currentPlayer);
-                break;
-                
-            case 4:  // Logout
-                cout << "\n";
-                printBorder();
-                printBoxCenter("KONFIRMASI LOGOUT");
-                printBorder();
-                cout << "  Apakah Anda yakin ingin logout? (y/n): ";
-                char confirm = getYesNoInput();
-                if (confirm == 'y' || confirm == 'Y') {
-                    printInfoMsg("Logout berhasil! Sampai jumpa, " + currentPlayer->username + ".");
-                    currentPlayer = nullptr;
-                    return;
-                } else {
-                    printInfoMsg("Logout dibatalkan.");
-                }
-                break;
+                clearScreen();
+                currentPlayer = nullptr;
+                return;
+            } else {
+                printInfoMsg("Logout dibatalkan.");
+                cout << "  Tekan ENTER untuk kembali...";
+                waitEnter();
+            }
         }
+        // choice == 0 tidak perlu ditangani karena akan keluar dari loop
+    
     } while (choice != 0 && currentPlayer != nullptr);
 }
 
@@ -1543,7 +1642,7 @@ int main() {
     // Inisialisasi deck kartu
     buildDeck();
     shuffleDeck();
-
+    
     // Registry akan otomatis memuat data dari file "players.dat"
     PlayerRegistry registry;
 
@@ -1588,7 +1687,9 @@ int main() {
                     printBorder();
                     registry.showLeaderboard();
                     cout << "  Tekan ENTER untuk kembali...";
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     waitEnter();
+                    clearScreen();
                     break;
                     
                 case 0:  // Keluar - dengan konfirmasi
