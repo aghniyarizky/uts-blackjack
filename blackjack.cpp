@@ -47,21 +47,9 @@ void clearScreen() {
 #endif
 }
 
-/*
- * waitEnter() - DIPERBAIKI
- * Fungsi untuk menunggu user menekan ENTER satu kali saja.
- * 
- * MASALAH SEBELUMNYA: 
- * Setelah getIntInput() atau input lainnya, ada newline tersisa di buffer.
- * cin.get() membaca newline tersebut langsung, tanpa menunggu user.
- * 
- * SOLUSI: 
- * Gunakan cin.ignore() untuk membersihkan buffer terlebih dahulu,
- * baru kemudian cin.get() untuk menunggu ENTER dari user.
- */
+
+// Fungsi untuk menunggu user menekan ENTER satu kali saja.
 void waitEnter() {
-    // Bersihkan buffer input dari karakter tersisa (seperti newline)
-    // cin.ignore(numeric_limits<streamsize>::max(), '\n');
     // Tunggu user menekan ENTER
     cin.get();
 }
@@ -126,8 +114,6 @@ int getIntInput() {
         printInlineError("Input tidak valid. Masukkan angka yang benar.");
         cout << "  > ";
     }
-    // Hapus newline setelah angka, tapi JANGAN di-ignore di sini
-    // Biarkan waitEnter() yang menangani
     return val;
 }
 
@@ -206,14 +192,14 @@ string getPasswordInput() {
             cout << "  > ";
             continue;
         }
-        
+
         break;
     }
     return pass;
 }
 
 /*
- * getConfirmPasswordInput() - FUNGSI BARU
+ * getConfirmPasswordInput()
  * Meminta input konfirmasi password TANPA validasi minimal karakter.
  * Hanya memastikan input tidak kosong.
  * Digunakan untuk konfirmasi password saat registrasi atau ganti password.
@@ -233,7 +219,7 @@ string getConfirmPasswordInput() {
             cout << "  > ";
             continue;
         }
-        
+
         break;
     }
     return pass;
@@ -408,12 +394,12 @@ struct Hand {
  * Menyimpan username, password, chips, statistik menang/kalah.
  */
 struct PlayerProfile {
-    int            id;
-    string         username;    // Nama pengguna (case insensitive untuk login)
-    string         password;    // Password (case sensitive)
-    int            chips;       // Jumlah chips saat ini
-    int            wins;        // Jumlah kemenangan
-    int            losses;      // Jumlah kekalahan
+    int id;
+    string username;    // Nama pengguna (case insensitive untuk login)
+    string password;    // Password (case sensitive)
+    int chips;       // Jumlah chips saat ini
+    int wins;        // Jumlah kemenangan
+    int losses;      // Jumlah kekalahan
     PlayerProfile* next;        // Pointer ke node berikutnya
 
     // Constructor: membuat profil pemain baru
@@ -428,8 +414,8 @@ struct PlayerProfile {
  */
 struct PlayerRegistry {
     PlayerProfile* head;
-    int            nextId;
-    string         filename;    // Nama file untuk menyimpan data
+    int nextId;
+    string filename;    // Nama file untuk menyimpan data
 
     // Constructor: memuat data dari file saat program dimulai
     PlayerRegistry(const string& fname = "players.dat") 
@@ -630,7 +616,7 @@ struct PlayerRegistry {
     }
 
     /*
-     * updatePlayerAccount() - DIPERBAIKI
+     * updatePlayerAccount()
      * UPDATE: Mengedit username dan password akun yang sedang login.
      * Validasi username tidak boleh sama dengan yang sudah ada.
      * Validasi password minimal 8 karakter dan konfirmasi sesuai.
@@ -1128,7 +1114,7 @@ void playBlackjack(PlayerProfile* p) {
     int  bet = 0;
     char playAgain = 'y';
 
-    while (playAgain == 'y' || playAgain == 'Y') {  // <-- TAMBAHKAN: loop utama
+    while (playAgain == 'y' || playAgain == 'Y') { 
         Hand playerHand, dealerHand;
         int  bet = 0;
 
@@ -1256,7 +1242,7 @@ void playBlackjack(PlayerProfile* p) {
             cout << "  [Deck diacak ulang]\n\n";
         }
         
-                // Tanya apakah ingin bermain lagi
+        // Tanya apakah ingin bermain lagi
         if (p->chips > 0) {
             cout << "\n";
             printBorder();
@@ -1397,12 +1383,10 @@ void printInfoMsg(const string& msg) {
 }
 
 /*
- * addNewPlayer() - DIPERBAIKI
+ * addNewPlayer()
  * Menu untuk menambah pemain baru.
  * Validasi: username unik (case insensitive), password minimal 8 karakter,
  * konfirmasi password sesuai. Chips awal = 100.
- * 
- * PERBAIKAN: Membersihkan buffer dengan benar sebelum input password.
  */
 void addNewPlayer(PlayerRegistry& reg) {
     clearScreen();
@@ -1453,12 +1437,10 @@ void addNewPlayer(PlayerRegistry& reg) {
 }
 
 /*
- * loginMenu() - DIPERBAIKI
+ * loginMenu()
  * Proses login: input username dan password.
  * Username case insensitive, password case sensitive.
  * Jika salah, akan looping di dalam fungsi ini.
- * 
- * PERBAIKAN: Membersihkan buffer dengan benar sebelum input password.
  */
 PlayerProfile* loginMenu(PlayerRegistry& reg) {
     clearScreen();
