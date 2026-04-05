@@ -1,44 +1,14 @@
-/*
- * ============================================================
- *  BLACKJACK + PLAYER MANAGEMENT SYSTEM in C++
- *  (VERSI DENGAN PENJELASAN / KOMENTAR DETAIL)
- *
- *  Konsep C++ yang Digunakan:
- *    - struct       : Untuk membuat tipe data bentukan (Card, HandNode, dll).
- *    - array        : Untuk menyimpan 52 kartu (deck).
- *    - pointer      : Untuk merujuk pada alamat memori (dealCard(), linked list).
- *    - linked list  : Struktur data dinamis untuk Profil Pemain (CRUD) dan kartu di tangan (Hand).
- *    - destructor   : Untuk membersihkan memori secara otomatis saat objek dihapus.
- *    - file I/O     : Untuk menyimpan data pemain secara permanen ke file.
- *
- *  Operasi CRUD (Create, Read, Update, Delete):
- *    - CREATE  : Menambah profil pemain baru
- *    - READ    : Menampilkan semua pemain (leaderboard)
- *    - UPDATE  : Mengubah nama atau jumlah chips pemain
- *    - DELETE  : Menghapus profil pemain
- * ============================================================
- */
-
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <string>
 #include <iomanip>
-#include <fstream>      // Untuk file I/O (menyimpan data pemain)
-#include <algorithm>    // Untuk transform (case insensitive)
-#include <cctype>       // Untuk tolower
-#include <limits>       // Untuk numeric_limits
+#include <fstream>     
+#include <algorithm>    
+#include <cctype>       
+#include <limits>       
 using namespace std;
 
-// ============================================================
-// FUNGSI UTILITY DASAR
-// ============================================================
-
-/*
- * clearScreen()
- * Membersihkan layar terminal agar tampilan lebih rapi.
- * Bekerja di Windows (cls) dan Linux/Mac (clear).
- */
 void clearScreen() {
 #ifdef _WIN32
     system("cls");
@@ -47,18 +17,10 @@ void clearScreen() {
 #endif
 }
 
-
-// Fungsi untuk menunggu user menekan ENTER satu kali saja.
 void waitEnter() {
-    // Tunggu user menekan ENTER
     cin.get();
 }
 
-/*
- * toLowercase()
- * Mengubah string menjadi huruf kecil semua (case insensitive).
- * Contoh: "RaFaH" menjadi "rafah"
- */
 string toLowercase(string str) {
     for (int i = 0; i < (int)str.length(); i++) {
         str[i] = tolower(str[i]);
@@ -66,11 +28,6 @@ string toLowercase(string str) {
     return str;
 }
 
-/*
- * printInlineError()
- * Mencetak pesan error dalam box yang rapi.
- * Fungsi ini dipanggil ketika user melakukan input yang salah.
- */
 void printInlineError(const string& msg) {
     const int W = 51;
     cout << "\n  +";
@@ -101,11 +58,6 @@ void printInlineError(const string& msg) {
     cout << "+\n\n";
 }
 
-/*
- * getIntInput()
- * Meminta input angka dari user.
- * Jika user memasukkan huruf, akan looping sampai benar.
- */
 int getIntInput() {
     int val;
     while (!(cin >> val)) {
@@ -117,16 +69,10 @@ int getIntInput() {
     return val;
 }
 
-/*
- * getYesNoInput()
- * Meminta input y/n dari user.
- * Validasi hanya menerima y, Y, n, N.
- */
 char getYesNoInput() {
     char c;
     while (true) {
         cin >> c;
-        // Hapus newline setelah karakter
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (c == 'y' || c == 'Y' || c == 'n' || c == 'N') return c;
         printInlineError("Input tidak valid. Masukkan 'y' atau 'n'.");
@@ -134,19 +80,11 @@ char getYesNoInput() {
     }
 }
 
-/*
- * getUsernameInput()
- * Meminta input username dengan batasan:
- *   - Maksimal 15 karakter
- *   - Tidak boleh kosong
- *   - Hanya satu kata (tanpa spasi)
- */
 string getUsernameInput() {
     const int MAX_NAME = 15;
     string name;
     while (true) {
         cin >> name;
-        // Hapus newline setelah username
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (name.empty()) {
             printInlineError("Username tidak boleh kosong.");
@@ -164,18 +102,12 @@ string getUsernameInput() {
     return name;
 }
 
-/*
- * getPasswordInput()
- * Meminta input password dengan syarat minimal 8 karakter.
- * Digunakan untuk password baru saat registrasi atau ganti password.
- */
 string getPasswordInput() {
     const int MIN_PASS = 8;
     string pass;
     while (true) {
         getline(cin, pass);
         
-        // Hapus carriage return (\r) jika ada (dari Windows)
         while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
             pass.pop_back();
         }
@@ -192,24 +124,17 @@ string getPasswordInput() {
             cout << "  > ";
             continue;
         }
-
+        
         break;
     }
     return pass;
 }
 
-/*
- * getConfirmPasswordInput()
- * Meminta input konfirmasi password TANPA validasi minimal karakter.
- * Hanya memastikan input tidak kosong.
- * Digunakan untuk konfirmasi password saat registrasi atau ganti password.
- */
 string getConfirmPasswordInput() {
     string pass;
     while (true) {
         getline(cin, pass);
         
-        // Hapus carriage return (\r) jika ada (dari Windows)
         while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
             pass.pop_back();
         }
@@ -219,16 +144,12 @@ string getConfirmPasswordInput() {
             cout << "  > ";
             continue;
         }
-
+        
         break;
     }
     return pass;
 }
 
-/*
- * getChipsInput()
- * Meminta input jumlah chips dengan batasan 1-999999.
- */
 int getChipsInput() {
     const int MAX_CHIPS = 999999;
     int val;
@@ -250,10 +171,6 @@ int getChipsInput() {
     return val;
 }
 
-/*
- * getMenuInput()
- * Meminta input angka dalam range tertentu (minVal - maxVal).
- */
 int getMenuInput(int minVal, int maxVal) {
     while (true) {
         int val = getIntInput();
@@ -269,46 +186,25 @@ int getMenuInput(int minVal, int maxVal) {
 // TUGAS ANGGOTA 3: Linked List khusus Game / Memori Tangan Berjalan
 // ============================================================
 
-/*
- * Struct Card
- * Mewakili satu kartu remi dengan suit (hati/keriting/dll), 
- * rank (2-10,J,Q,K,A), dan nilai dalam blackjack.
- */
 struct Card {
     string suit;    // Hearts, Diamonds, Clubs, Spades
     string rank;    // 2,3,4,5,6,7,8,9,10,J,Q,K,A
-    int    value;   // Nilai dalam blackjack (2-10, 10 untuk JQK, 11 untuk A)
+    int value;   // Nilai kartu = 2-10, 10 untuk JQK, 11 atau 1 untuk A (tergantung kondisi)
 };
 
-/*
- * Struct HandNode
- * Node untuk linked list tangan pemain.
- * Setiap node menyimpan satu kartu dan pointer ke node berikutnya.
- */
 struct HandNode {
-    Card      card;       // Data kartu
-    HandNode* next;       // Pointer ke node berikutnya
+    Card card;       
+    HandNode* next;       
     
-    // Constructor: membuat node baru dengan kartu tertentu
     HandNode(Card c) : card(c), next(nullptr) {}
 };
 
-/*
- * Struct Hand
- * Linked list untuk menyimpan kartu di tangan pemain/dealer.
- * Memiliki fungsi untuk menambah kartu, menghitung total, dan membersihkan memori.
- */
 struct Hand {
-    HandNode* head;       // Pointer ke kartu pertama
-    int       size;       // Jumlah kartu di tangan
+    HandNode* head;      
+    int size;    
 
-    // Constructor: tangan kosong saat pertama dibuat
     Hand() : head(nullptr), size(0) {}
 
-    /*
-     * addCard()
-     * Menambahkan kartu baru ke akhir linked list.
-     */
     void addCard(Card c) {
         HandNode* node = new HandNode(c);
         if (!head) {
@@ -323,12 +219,6 @@ struct Hand {
         cur->next = node;
         size++;
     }
-
-    /*
-     * total()
-     * Menghitung total nilai kartu sesuai aturan blackjack.
-     * As bisa bernilai 11 atau 1 (otomatis disesuaikan jika melebihi 21).
-     */
     int total() const {
         int sum = 0, aces = 0;
         HandNode* cur = head;
@@ -337,7 +227,8 @@ struct Hand {
             if (cur->card.rank == "A") aces++;
             cur = cur->next;
         }
-        // Jika total > 21 dan ada As, ubah nilai As dari 11 menjadi 1
+
+        // Jika total > 21 dan ada As, nilai As berubah dari 11 menjadi 1
         while (sum > 21 && aces > 0) {
             sum -= 10;
             aces--;
@@ -345,13 +236,8 @@ struct Hand {
         return sum;
     }
 
-    // Destructor: membersihkan memori otomatis
     ~Hand() { clear(); }
 
-    /*
-     * clear()
-     * Menghapus semua node dalam linked list dan membebaskan memori.
-     */
     void clear() {
         HandNode* cur = head;
         while (cur) {
@@ -363,11 +249,6 @@ struct Hand {
         size = 0;
     }
 
-    /*
-     * print()
-     * Mencetak kartu-kartu dalam tangan.
-     * Parameter hideFirst: untuk menyembunyikan kartu pertama dealer.
-     */
     void print(bool hideFirst = false) const {
         HandNode* cur = head;
         int i = 0;
@@ -388,47 +269,29 @@ struct Hand {
 // TUGAS ANGGOTA 4: Single Linked List Profil Global & Operasi CRUD
 // ============================================================
 
-/*
- * Struct PlayerProfile
- * Profil pemain yang juga berfungsi sebagai Node dalam linked list.
- * Menyimpan username, password, chips, statistik menang/kalah.
- */
 struct PlayerProfile {
     int id;
-    string username;    // Nama pengguna (case insensitive untuk login)
-    string password;    // Password (case sensitive)
-    int chips;       // Jumlah chips saat ini
-    int wins;        // Jumlah kemenangan
-    int losses;      // Jumlah kekalahan
-    PlayerProfile* next;        // Pointer ke node berikutnya
+    string username;    //case insensitive untuk login
+    string password;    // case sensitive
+    int chips;      
+    int wins;       
+    int losses;      
+    PlayerProfile* next;       
 
-    // Constructor: membuat profil pemain baru
     PlayerProfile(int i, string u, string p, int c)
         : id(i), username(u), password(p), chips(c), wins(0), losses(0), next(nullptr) {}
 };
 
-/*
- * Struct PlayerRegistry
- * Pengelola linked list profil pemain dengan operasi CRUD.
- * Dilengkapi dengan penyimpanan ke file (permanen).
- */
 struct PlayerRegistry {
     PlayerProfile* head;
     int nextId;
-    string filename;    // Nama file untuk menyimpan data
+    string filename;   
 
-    // Constructor: memuat data dari file saat program dimulai
     PlayerRegistry(const string& fname = "players.dat") 
         : head(nullptr), nextId(1), filename(fname) {
         loadFromFile();
     }
 
-    /*
-     * saveToFile()
-     * Menyimpan semua data pemain ke file.
-     * Format: id|username|password|chips|wins|losses
-     * Dipanggil setiap kali ada perubahan data (tambah, edit, hapus, main).
-     */
     void saveToFile() {
         ofstream file(filename);
         if (!file.is_open()) return;
@@ -446,16 +309,11 @@ struct PlayerRegistry {
         file.close();
     }
 
-    /*
-     * loadFromFile()
-     * Memuat data pemain dari file saat program dimulai.
-     * Jika file tidak ada, data akan kosong.
-     */
     void loadFromFile() {
         ifstream file(filename);
         if (!file.is_open()) return;
         
-        clear();  // Bersihkan data yang ada
+        clear(); 
         
         string line;
         int maxId = 0;
@@ -463,7 +321,6 @@ struct PlayerRegistry {
         while (getline(file, line)) {
             if (line.empty()) continue;
             
-            // Parsing format: id|username|password|chips|wins|losses
             size_t pos = 0;
             size_t nextPos = line.find('|', pos);
             int id = stoi(line.substr(pos, nextPos - pos));
@@ -493,7 +350,6 @@ struct PlayerRegistry {
             node->losses = losses;
             node->next = nullptr;
             
-            // Tambahkan ke linked list
             if (!head) {
                 head = node;
             } else {
@@ -509,11 +365,6 @@ struct PlayerRegistry {
         file.close();
     }
 
-    /*
-     * addPlayer()
-     * CREATE: Menambah pemain baru ke linked list.
-     * startChips = 100 (sesuai permintaan, bukan 500 lagi).
-     */
     void addPlayer(string username, string password, int startChips = 100, bool silent = false) {
         PlayerProfile* node = new PlayerProfile(nextId++, username, password, startChips);
         
@@ -527,14 +378,9 @@ struct PlayerRegistry {
         if (!silent)
             cout << "\n  [+] Pemain \"" << username << "\" ditambahkan (ID: " << node->id << ").\n";
         
-        saveToFile();  // Simpan ke file
+        saveToFile();  
     }
 
-    /*
-     * isUsernameExists()
-     * Mengecek apakah username sudah terdaftar (case insensitive).
-     * "Rafah" dan "rafah" dianggap sama.
-     */
     bool isUsernameExists(const string& username) {
         string lowerUsername = toLowercase(username);
         PlayerProfile* cur = head;
@@ -545,11 +391,6 @@ struct PlayerRegistry {
         return false;
     }
 
-    /*
-     * login()
-     * Verifikasi username (case insensitive) dan password (case sensitive).
-     * Mengembalikan pointer ke PlayerProfile jika berhasil.
-     */
     PlayerProfile* login(const string& username, const string& password) {
         string lowerUsername = toLowercase(username);
         PlayerProfile* cur = head;
@@ -561,23 +402,16 @@ struct PlayerRegistry {
         return nullptr;
     }
 
-    /*
-     * showLeaderboard()
-     * READ: Menampilkan semua pemain diurutkan dari chips terbanyak ke tersedikit.
-     * Menggunakan bubble sort pada array pointer.
-     */
     void showLeaderboard() const {
         if (!head) { 
             cout << "\n  Tidak ada pemain yang terdaftar.\n"; 
             return; 
         }
 
-        // Hitung jumlah pemain
         int count = 0;
         PlayerProfile* cur = head;
         while (cur) { count++; cur = cur->next; }
 
-        // Salin pointer ke array
         PlayerProfile** arr = new PlayerProfile*[count];
         cur = head;
         for (int i = 0; i < count; i++) {
@@ -585,7 +419,6 @@ struct PlayerRegistry {
             cur = cur->next;
         }
 
-        // Bubble sort berdasarkan chips (terbanyak ke tersedikit)
         for (int i = 0; i < count - 1; i++) {
             for (int j = 0; j < count - i - 1; j++) {
                 if (arr[j]->chips < arr[j+1]->chips) {
@@ -596,7 +429,6 @@ struct PlayerRegistry {
             }
         }
 
-        // Tampilkan leaderboard
         cout << "\n";
         cout << "  +------+----------------------+--------+--------+--------+\n";
         cout << "  | Rank | Username             | Chips  | Menang | Kalah  |\n";
@@ -615,16 +447,9 @@ struct PlayerRegistry {
         delete[] arr;
     }
 
-    /*
-     * updatePlayerAccount()
-     * UPDATE: Mengedit username dan password akun yang sedang login.
-     * Validasi username tidak boleh sama dengan yang sudah ada.
-     * Validasi password minimal 8 karakter dan konfirmasi sesuai.
-     */
     void updatePlayerAccount(PlayerProfile* p) {
         if (!p) return;
 
-        // Helper functions untuk box (lambda)
         auto bRow = [](const string& t) {
             const int W = 51;
             cout << "  | " << t;
@@ -681,7 +506,6 @@ struct PlayerRegistry {
             return;
         }
 
-        // Edit username
         if (choice == 1 || choice == 3) {
             string newUsername;
             while (true) {
@@ -696,19 +520,15 @@ struct PlayerRegistry {
             p->username = newUsername;
         }
         
-        // Edit password
         if (choice == 2 || choice == 3) {
             string newPass, confirmPass;
 
-            // biar pas input password itu gak kebaca kosong
             if (choice == 2) {
                  cin.ignore(numeric_limits<streamsize>::max(), '\n');
     } 
-            // Input password baru (diluar loop konfirmasi)
             cout << "  Password baru (minimal 8 karakter): ";
             newPass = getPasswordInput();
             
-            // Loop konfirmasi password sampai sesuai
             while (true) {
                 cout << "  Konfirmasi password baru: ";
                 confirmPass = getConfirmPasswordInput();
@@ -730,15 +550,9 @@ struct PlayerRegistry {
         saveToFile();  // Simpan perubahan
     }
 
-    /*
-     * deletePlayer()
-     * DELETE: Menghapus profil pemain dari linked list.
-     * Mengembalikan true jika berhasil, false jika gagal.
-     */
     bool deletePlayer(PlayerProfile* target) {
         if (!head || !target) return false;
 
-        // Kasus 1: target adalah head
         if (head == target) {
             head = head->next;
             delete target;
@@ -746,7 +560,6 @@ struct PlayerRegistry {
             return true;
         }
 
-        // Kasus 2: target di tengah atau akhir
         PlayerProfile* prev = head;
         while (prev->next && prev->next != target)
             prev = prev->next;
@@ -759,10 +572,8 @@ struct PlayerRegistry {
         return true;
     }
 
-    // Destructor: membersihkan semua memori
     ~PlayerRegistry() { clear(); }
 
-    // Membersihkan linked list
     void clear() {
         PlayerProfile* cur = head;
         while (cur) {
@@ -780,14 +591,9 @@ struct PlayerRegistry {
 // ============================================================
 
 const int DECK_SIZE = 52;
-Card deck[DECK_SIZE];   // Array statis 52 kartu
-int  deckIndex = 0;     // Indeks kartu berikutnya yang akan dibagikan
+Card deck[DECK_SIZE];   // jumlah kartu = 52
+int  deckIndex = 0;     
 
-/*
- * buildDeck()
- * Menginisialisasi deck dengan 52 kartu lengkap.
- * 4 suit (Hearts, Diamonds, Clubs, Spades) x 13 rank (2-10,J,Q,K,A).
- */
 void buildDeck() {
     string suits[]  = {"Hearts","Diamonds","Clubs","Spades"};
     string ranks[]  = {"2","3","4","5","6","7","8","9","10","J","Q","K","A"};
@@ -802,11 +608,6 @@ void buildDeck() {
     }
 }
 
-/*
- * shuffleDeck()
- * Mengacak posisi kartu menggunakan algoritma Fisher-Yates.
- * Juga mereset deckIndex ke 0.
- */
 void shuffleDeck() {
     for (int i = DECK_SIZE - 1; i > 0; i--) {
         int j = rand() % (i + 1);
@@ -817,11 +618,6 @@ void shuffleDeck() {
     deckIndex = 0;
 }
 
-/*
- * dealCard()
- * Mengambil satu kartu dari deck (mengembalikan pointer ke Card).
- * Jika deck habis, akan diacak ulang otomatis.
- */
 Card* dealCard() {
     if (deckIndex >= DECK_SIZE) { 
         shuffleDeck(); 
@@ -835,7 +631,7 @@ Card* dealCard() {
 // TUGAS ANGGOTA 5: Perancangan Arsitektur Aturan Game & Payout
 // ============================================================
 
-const int BOX = 52;  // Lebar box untuk tampilan
+const int BOX = 52; 
 
 void printBorder() {
     cout << "  +";
@@ -849,10 +645,6 @@ void printBorderThin() {
     cout << "|\n";
 }
 
-/*
- * printBoxRow()
- * Mencetak teks rata kiri di dalam box dengan word-wrap otomatis.
- */
 void printBoxRow(const string& text) {
     const int W = BOX - 1;
     if ((int)text.size() <= W) {
@@ -895,10 +687,7 @@ void printBoxRow(const string& text) {
     }
 }
 
-/*
- * printBoxCenter()
- * Mencetak teks rata tengah di dalam box dengan word-wrap otomatis.
- */
+
 void printBoxCenter(const string& text) {
     const int W = BOX - 1;
     if ((int)text.size() <= W) {
@@ -932,11 +721,6 @@ void printBoxCenter(const string& text) {
     }
 }
 
-/*
- * printHandInBox()
- * Mencetak kartu-kartu secara horizontal dalam format ASCII art.
- * Setiap kartu ditampilkan dalam 5 baris.
- */
 void printHandInBox(const Hand& hand, bool hideFirst) {
     const int MAX_CARDS = 11;
     string rows[5][MAX_CARDS];
@@ -981,14 +765,6 @@ void printHandInBox(const Hand& hand, bool hideFirst) {
     }
 }
 
-/*
- * showGameTable()
- * Menampilkan seluruh meja permainan dalam satu box:
- * - Info pemain (nama, chips, taruhan)
- * - Kartu dealer (bisa disembunyikan)
- * - Kartu pemain
- * - Status permainan
- */
 void showGameTable(PlayerProfile* p, const Hand& playerHand, const Hand& dealerHand,
                    bool hideDealer, int bet, const string& status = "") {
     cout << "\n";
@@ -1020,10 +796,6 @@ void showGameTable(PlayerProfile* p, const Hand& playerHand, const Hand& dealerH
     cout << "\n";
 }
 
-/*
- * showRules()
- * Menampilkan aturan bermain Blackjack.
- */
 void showRules() {
     clearScreen();
     cout << "\n";
@@ -1068,10 +840,6 @@ void showRules() {
     waitEnter();
 }
 
-/*
- * showResult()
- * Menampilkan hasil akhir ronde permainan.
- */
 void showResult(PlayerProfile* p, int pt, int dt, bool bust,
                 bool playerBJ, bool dealerBJ, int bet, int payout, bool win, bool push) {
     cout << "\n";
@@ -1104,17 +872,12 @@ void showResult(PlayerProfile* p, int pt, int dt, bool bust,
     cout << "\n";
 }
 
-/*
- * playBlackjack()
- * Fungsi utama permainan Blackjack satu ronde.
- * Parameter p: pointer ke pemain yang sedang bermain.
- */
 void playBlackjack(PlayerProfile* p) {
     Hand playerHand, dealerHand;
     int  bet = 0;
     char playAgain = 'y';
 
-    while (playAgain == 'y' || playAgain == 'Y') { 
+    while (playAgain == 'y' || playAgain == 'Y') {
         Hand playerHand, dealerHand;
         int  bet = 0;
 
@@ -1242,7 +1005,7 @@ void playBlackjack(PlayerProfile* p) {
             cout << "  [Deck diacak ulang]\n\n";
         }
         
-        // Tanya apakah ingin bermain lagi
+        // apakah mau bermain lagi
         if (p->chips > 0) {
             cout << "\n";
             printBorder();
@@ -1258,7 +1021,7 @@ void playBlackjack(PlayerProfile* p) {
                 continue;
             }
         } else {
-            // CHIPS HABIS - TANYA BELI CHIPS
+            // chips habis - tanya beli chips
             cout << "\n";
             printBorder();
             printBoxCenter("[GAGAL] " + p->username + " tidak punya chips. apakah ingin membeli chips?");
@@ -1277,7 +1040,7 @@ void playBlackjack(PlayerProfile* p) {
                 cout << "\n  Tekan ENTER untuk melanjutkan bermain...";
                 waitEnter();
                 clearScreen();
-                continue;  // LANJUT RONDE BERIKUTNYA
+                continue;  // lanjut ke ronde selanjutnya
             } else {
                 playAgain = 'n';
             }
@@ -1290,10 +1053,6 @@ void playBlackjack(PlayerProfile* p) {
 // TUGAS ANGGOTA 1: Mengatur Rute (Router) Program Secara Menyeluruh
 // ============================================================
 
-/*
- * printWelcomeBanner()
- * Menampilkan banner ASCII art saat program pertama kali dijalankan.
- */
 void printWelcomeBanner() {
     system("chcp 65001 > nul");
     cout << "\n";
@@ -1307,10 +1066,6 @@ void printWelcomeBanner() {
     cout << "\n";
 }
 
-/*
- * printMainMenu()
- * Menampilkan menu utama (Tambah Pemain, Login, Papan Peringkat, Keluar).
- */
 void printMainMenu() {
     cout << "\n";
     printBorder();
@@ -1327,10 +1082,6 @@ void printMainMenu() {
     cout << "  Pilih menu: ";
 }
 
-/*
- * printGameMenu()
- * Menampilkan menu permainan setelah login berhasil.
- */
 void printGameMenu(const string& username) {
     cout << "\n";
     printBorder();
@@ -1347,10 +1098,6 @@ void printGameMenu(const string& username) {
     cout << "  Pilih menu: ";
 }
 
-/*
- * printSuccessMsg()
- * Menampilkan pesan sukses dalam box.
- */
 void printSuccessMsg(const string& msg) {
     cout << "\n";
     printBorder();
@@ -1359,10 +1106,6 @@ void printSuccessMsg(const string& msg) {
     cout << "\n";
 }
 
-/*
- * printErrorMsg()
- * Menampilkan pesan error dalam box.
- */
 void printErrorMsg(const string& msg) {
     cout << "\n";
     printBorder();
@@ -1371,10 +1114,6 @@ void printErrorMsg(const string& msg) {
     cout << "\n";
 }
 
-/*
- * printInfoMsg()
- * Menampilkan pesan informasi dalam box tipis.
- */
 void printInfoMsg(const string& msg) {
     cout << "\n";
     printBorderThin();
@@ -1383,12 +1122,6 @@ void printInfoMsg(const string& msg) {
     cout << "\n";
 }
 
-/*
- * addNewPlayer()
- * Menu untuk menambah pemain baru.
- * Validasi: username unik (case insensitive), password minimal 8 karakter,
- * konfirmasi password sesuai. Chips awal = 100.
- */
 void addNewPlayer(PlayerRegistry& reg) {
     clearScreen();
     cout << "\n";
@@ -1398,7 +1131,6 @@ void addNewPlayer(PlayerRegistry& reg) {
     
     string username, password, confirmPass;
     
-    // Input username - loop sampai username tidak terdaftar
     while (true) {
         cout << "  Username (maks 15 karakter, 1 kata): ";
         username = getUsernameInput();
@@ -1410,14 +1142,12 @@ void addNewPlayer(PlayerRegistry& reg) {
         break;
     }
     
-    // Input password - loop sampai valid (minimal 8 karakter)
     while (true) {
         cout << "  Password (minimal 8 karakter): ";
         password = getPasswordInput();
-        break;  // getPasswordInput sudah memvalidasi
+        break; 
     }
     
-    // Input konfirmasi password - loop sampai sesuai dengan password
     while (true) {
         cout << "  Konfirmasi password: ";
         confirmPass = getConfirmPasswordInput();
@@ -1429,7 +1159,6 @@ void addNewPlayer(PlayerRegistry& reg) {
         break;
     }
     
-    // Tambah pemain dengan chips awal 100
     reg.addPlayer(username, password, 100);
     printSuccessMsg("Pemain \"" + username + "\" berhasil ditambahkan dengan 100 chips!");
     cout << "  Tekan ENTER untuk kembali...";
@@ -1437,12 +1166,6 @@ void addNewPlayer(PlayerRegistry& reg) {
     clearScreen();
 }
 
-/*
- * loginMenu()
- * Proses login: input username dan password.
- * Username case insensitive, password case sensitive.
- * Jika salah, akan looping di dalam fungsi ini.
- */
 PlayerProfile* loginMenu(PlayerRegistry& reg) {
     clearScreen();
     cout << "\n";
@@ -1452,7 +1175,6 @@ PlayerProfile* loginMenu(PlayerRegistry& reg) {
     
     string username, password;
     
-    // Input username - loop sampai username terdaftar
     while (true) {
         cout << "  Username: ";
         username = getUsernameInput();
@@ -1464,7 +1186,6 @@ PlayerProfile* loginMenu(PlayerRegistry& reg) {
         break;
     }
     
-    // Input password - loop sampai password benar
     while (true) {
         cout << "  Password: ";
         password = getConfirmPasswordInput();
@@ -1481,11 +1202,6 @@ PlayerProfile* loginMenu(PlayerRegistry& reg) {
     }
 }
 
-/*
- * accountManagementMenu() - DIPERBAIKI
- * Manajemen akun untuk pemain yang sedang login.
- * Bisa edit username/password atau hapus akun.
- */
 void accountManagementMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
     if (!currentPlayer) return;
     
@@ -1543,19 +1259,10 @@ void accountManagementMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
             cout << "  Tekan ENTER untuk kembali...";
             waitEnter();
         }
-        // choice == 0 -> tidak perlu ditangani, loop akan berhenti karena while (choice != 0)
         
     } while (choice != 0);
 }
 
-/*
- * playGameMenu()
- * Menu permainan setelah login:
- * - Mulai Bermain: langsung ke playBlackjack()
- * - Aturan Permainan: tampilkan aturan
- * - Manajemen Akun: edit/hapus akun
- * - Logout: kembali ke menu utama
- */
 void playGameMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
     if (!currentPlayer) return;
     
@@ -1609,7 +1316,6 @@ void playGameMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
                 waitEnter();
             }
         }
-        // choice == 0 tidak perlu ditangani karena akan keluar dari loop
     
     } while (choice != 0 && currentPlayer != nullptr);
 }
@@ -1619,20 +1325,15 @@ void playGameMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
 // ============================================================
 
 int main() {
-    // Inisialisasi random number generator
     srand(static_cast<unsigned>(time(nullptr)));
 
-    // Inisialisasi deck kartu
     buildDeck();
     shuffleDeck();
     
-    // Registry akan otomatis memuat data dari file "players.dat"
     PlayerRegistry registry;
 
-    // Cek apakah file data sudah ada
     ifstream testFile("players.dat");
     if (!testFile.is_open()) {
-        // File tidak ada, tambahkan data dummy
         registry.addPlayer("Rafah", "password123", 200, true);
         registry.addPlayer("Najwa", "password123", 150, true);
         registry.addPlayer("Indra", "password123", 100, true);
@@ -1683,7 +1384,7 @@ int main() {
                     cout << "  Apakah Anda yakin ingin keluar dari program? (y/n): ";
                     char confirm = getYesNoInput();
                     if (confirm != 'y' && confirm != 'Y') {
-                        choice = -1;  // Batalkan keluar, kembali ke menu
+                        choice = -1;  // Batal keluar, kembali ke menu
                         printInfoMsg("Keluar dibatalkan.");
                         cout << "  Tekan ENTER untuk kembali...";
                         waitEnter();
@@ -1696,7 +1397,6 @@ int main() {
         
     } while (choice != 0);
 
-    // Tampilkan ringkasan sebelum keluar
     clearScreen();
     cout << "\n\n";
     printBorder();
