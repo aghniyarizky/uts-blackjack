@@ -237,7 +237,13 @@ void playGameMenu(PlayerRegistry& reg, PlayerProfile*& currentPlayer) {
                     int newChips = getChipsInput();
                     currentPlayer->chips = newChips;
                     reg.saveToFile();
-                    printSuccessMsg("Chips " + currentPlayer->username + " sekarang: " + to_string(newChips));
+                    printBorder();
+                    printBoxCenter("Berhasil membeli " + to_string(newChips) + " chips!");
+                    printBorder();
+                    cout << "\n  Tekan ENTER untuk melanjutkan bermain...";
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cin.get();
+                    clearScreen();
                 }
             } else {
                 playBlackjack(currentPlayer);
