@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-//  SECTION 3 — DECK (Array 1D + Manipulation Array Pointing)
+//  SECTION 3 — DECK KARTU
 // ═══════════════════════════════════════════════════════
 
 #ifndef CARDS
