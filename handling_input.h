@@ -1,11 +1,28 @@
 #ifndef INPUT_HANDLER_H
 #define INPUT_HANDLER_H
 
-// using namespace std;
 #include "utility.h"
 
-// Gunakan 'inline' agar bisa didefinisikan langsung di dalam header
-inline void printInlineError(const string& msg) {
+void clearScreen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void waitEnter() {
+    cin.get();
+}
+
+string toLowercase(string str) {
+    for (int i = 0; i < (int)str.length(); i++) {
+        str[i] = tolower(str[i]);
+    }
+    return str;
+}
+
+void printInlineError(const string& msg) {
     const int W = 51;
     cout << "\n  +";
     for (int i = 0; i < W + 1; i++) cout << "-";
@@ -35,42 +52,41 @@ inline void printInlineError(const string& msg) {
     cout << "+\n\n";
 }
 
-inline int getIntInput() {
+int getIntInput() {
     int val;
     while (!(cin >> val)) {
         cin.clear();
-        while (cin.get() != '\n') continue;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         printInlineError("Input tidak valid. Masukkan angka yang benar.");
         cout << "  > ";
     }
-    while (cin.get() != '\n') continue;
     return val;
 }
 
-inline char getYesNoInput() {
+char getYesNoInput() {
     char c;
     while (true) {
         cin >> c;
-        while (cin.get() != '\n') continue;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (c == 'y' || c == 'Y' || c == 'n' || c == 'N') return c;
         printInlineError("Input tidak valid. Masukkan 'y' atau 'n'.");
         cout << "  > ";
     }
 }
 
-inline string getNameInput() {
+string getUsernameInput() {
     const int MAX_NAME = 15;
     string name;
     while (true) {
         cin >> name;
-        while (cin.get() != '\n') continue;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (name.empty()) {
-            printInlineError("Nama tidak boleh kosong.");
+            printInlineError("Username tidak boleh kosong.");
             cout << "  > ";
             continue;
         }
         if ((int)name.size() > MAX_NAME) {
-            printInlineError("Nama terlalu panjang! Maksimal " + to_string(MAX_NAME) +
+            printInlineError("Username terlalu panjang! Maksimal " + to_string(MAX_NAME) +
                              " karakter (kamu memasukkan " + to_string((int)name.size()) + ").");
             cout << "  > ";
             continue;
@@ -80,7 +96,55 @@ inline string getNameInput() {
     return name;
 }
 
-inline int getChipsInput() {
+string getPasswordInput() {
+    const int MIN_PASS = 8;
+    string pass;
+    while (true) {
+        getline(cin, pass);
+        
+        while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
+            pass.pop_back();
+        }
+        
+        if (pass.empty()) {
+            printInlineError("Password tidak boleh kosong.");
+            cout << "  > ";
+            continue;
+        }
+        
+        if ((int)pass.length() < MIN_PASS) {
+            printInlineError("Password minimal " + to_string(MIN_PASS) + 
+                           " karakter (kamu memasukkan " + to_string((int)pass.length()) + ").");
+            cout << "  > ";
+            continue;
+        }
+        
+        break;
+    }
+    return pass;
+}
+
+string getConfirmPasswordInput() {
+    string pass;
+    while (true) {
+        getline(cin, pass);
+        
+        while (!pass.empty() && (pass.back() == '\r' || pass.back() == '\n')) {
+            pass.pop_back();
+        }
+        
+        if (pass.empty()) {
+            printInlineError("Konfirmasi password tidak boleh kosong.");
+            cout << "  > ";
+            continue;
+        }
+        
+        break;
+    }
+    return pass;
+}
+
+int getChipsInput() {
     const int MAX_CHIPS = 999999;
     int val;
     while (true) {
@@ -101,4 +165,13 @@ inline int getChipsInput() {
     return val;
 }
 
+int getMenuInput(int minVal, int maxVal) {
+    while (true) {
+        int val = getIntInput();
+        if (val >= minVal && val <= maxVal) return val;
+        printInlineError("Pilihan tidak valid. Masukkan angka " +
+                         to_string(minVal) + "-" + to_string(maxVal) + ".");
+        cout << "  > ";
+    }
+}
 #endif
