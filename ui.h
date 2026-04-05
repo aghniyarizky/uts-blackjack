@@ -413,7 +413,8 @@ void playBlackjack(PlayerProfile* p) {
                 printBoxCenter("Berhasil membeli " + to_string(newChips) + " chips!");
                 printBorder();
                 cout << "\n  Tekan ENTER untuk melanjutkan bermain...";
-                waitEnter();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cin.get();
                 clearScreen();
                 continue;  // lanjut ke ronde selanjutnya
             } else {

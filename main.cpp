@@ -38,43 +38,40 @@ int main() {
             printMainMenu();
             choice = getMenuInput(0, 3);
             
-            switch (choice) {
-                case 1:  // Tambah Pemain Baru
-                    addNewPlayer(registry);
-                    break;
-                    
-                case 2:  // Login
-                    currentPlayer = loginMenu(registry);
-                    break;
-                    
-                case 3:  // Papan Peringkat
-                    clearScreen();
-                    cout << "\n";
-                    printBorder();
-                    printBoxCenter("P A P A N   P E R I N G K A T");
-                    printBorder();
-                    registry.showLeaderboard();
+            if (choice == 1) {  // Tambah Pemain Baru
+                addNewPlayer(registry);
+                
+            } else if (choice == 2) {  // Login
+                currentPlayer = loginMenu(registry);
+                
+            } else if (choice == 3) {  // Papan Peringkat
+                clearScreen();
+                cout << "\n";
+                printBorder();
+                printBoxCenter("P A P A N   P E R I N G K A T");
+                printBorder();
+                registry.showLeaderboard();
+                cout << "  Tekan ENTER untuk kembali...";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                waitEnter();
+                clearScreen();
+                
+            } else if (choice == 0) {  // Keluar
+                cout << "\n";
+                printBorder();
+                printBoxCenter("KONFIRMASI KELUAR");
+                printBorder();
+                cout << "  Apakah Anda yakin ingin keluar dari program? (y/n): ";
+                char confirm = getYesNoInput();
+                if (confirm != 'y' && confirm != 'Y') {
+                    choice = -1;  // Batal keluar, kembali ke menu
+                    printInfoMsg("Keluar dibatalkan.");
                     cout << "  Tekan ENTER untuk kembali...";
-                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     waitEnter();
                     clearScreen();
-                    break;
-                    
-                case 0:  // Keluar - dengan konfirmasi
-                    cout << "\n";
-                    printBorder();
-                    printBoxCenter("KONFIRMASI KELUAR");
-                    printBorder();
-                    cout << "  Apakah Anda yakin ingin keluar dari program? (y/n): ";
-                    char confirm = getYesNoInput();
-                    if (confirm != 'y' && confirm != 'Y') {
-                        choice = -1;  // Batal keluar, kembali ke menu
-                        printInfoMsg("Keluar dibatalkan.");
-                        cout << "  Tekan ENTER untuk kembali...";
-                        waitEnter();
-                    }
-                    break;
+                }
             }
+            
         } else {
             playGameMenu(registry, currentPlayer);
         }
